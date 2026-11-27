@@ -370,3 +370,104 @@ def new_file():
     except Exception as e:
         flash(f'Gagal membuat file: {str(e)}', 'danger')
         return redirect(url_for('filemanager.index', subpath=subpath))
+
+
+@filemanager_bp.route('/files/bulk-delete', methods=['POST'])
+@login_required
+def bulk_delete():
+    import json
+    home_dir = current_user.home_dir
+    subpath = request.form.get('subpath', '')
+    targets_json = request.form.get('targets', '[]')
+
+    try:
+        targets = json.loads(targets_json)
+    except Exception:
+        flash('Data tidak valid.', 'danger')
+        return redirect(url_for('filemanager.index', subpath=subpath))
+
+    deleted = 0
+    errors = 0
+    for target_rel in targets:
+        target = get_safe_path(home_dir, target_rel)
+        if target is None or not os.path.exists(target):
+            errors += 1
+            continue
+        if os.path.realpath(target) == os.path.realpath(home_dir):
+            errors += 1
+            continue
+        try:
+            if os.path.isdir(target):
+                shutil.rmtree(target)
+            else:
+                os.remove(target)
+            deleted += 1
+        except Exception:
+            errors += 1
+
+    if deleted:
+        flash(f'{deleted} item berhasil dihapus.', 'success')
+    if errors:
+        flash(f'{errors} item gagal dihapus.', 'warning')
+
+    return redirect(url_for('filemanager.index', subpath=subpath))
+
+
+@filemanager_bp.route('/files/bulk-move', methods=['POST'])
+@login_required
+def bulk_move():
+    import json
+    home_dir = current_user.home_dir
+    dest_subpath = request.form.get('dest_subpath', '')
+    targets_json = request.form.get('targets', '[]')
+    operation = request.form.get('operation', 'cut')
+
+    try:
+        targets = json.loads(targets_json)
+    except Exception:
+        flash('Data tidak valid.', 'danger')
+        return redirect(url_for('filemanager.index', subpath=dest_subpath))
+
+    dest_dir = get_safe_path(home_dir, dest_subpath)
+    if dest_dir is None or not os.path.isdir(dest_dir):
+        flash('Folder tujuan tidak valid.', 'danger')
+        return redirect(url_for('filemanager.index', subpath=dest_subpath))
+
+    moved = 0
+    errors = 0
+    for target_rel in targets:
+        target = get_safe_path(home_dir, target_rel)
+        if target is None or not os.path.exists(target):
+            errors += 1
+            continue
+        if os.path.realpath(target) == os.path.realpath(home_dir):
+            errors += 1
+            continue
+
+        dest_path = os.path.join(dest_dir, os.path.basename(target))
+
+        # Jangan pindah ke dirinya sendiri
+        if os.path.realpath(target) == os.path.realpath(dest_path):
+            errors += 1
+            continue
+
+        try:
+            if operation == 'cut':
+                shutil.move(target, dest_path)
+            else:
+                # copy
+                if os.path.isdir(target):
+                    shutil.copytree(target, dest_path)
+                else:
+                    shutil.copy2(target, dest_path)
+            moved += 1
+        except Exception as e:
+            errors += 1
+
+    op_name = 'dipindahkan' if operation == 'cut' else 'disalin'
+    if moved:
+        flash(f'{moved} item berhasil {op_name}.', 'success')
+    if errors:
+        flash(f'{errors} item gagal.', 'warning')
+
+    return redirect(url_for('filemanager.index', subpath=dest_subpath))

@@ -6,7 +6,7 @@
 <style>
     .fm-toolbar { background:#fff; border-radius:12px; padding:14px 20px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
     .fm-table th { font-size:.8rem; text-transform:uppercase; color:#94a3b8; font-weight:600; border-bottom:2px solid #f1f5f9; }
-    .fm-table tr:hover { background:#f8fafc; cursor:pointer; }
+    .fm-table tr:hover { background:#f8fafc; }
     .fm-table td { vertical-align:middle; padding:10px 12px; }
     .fm-name { font-weight:500; color:#1e293b; }
     .fm-name:hover { color:#4f46e5; }
@@ -15,35 +15,51 @@
     .action-btn { opacity:0; transition:.15s; }
     tr:hover .action-btn { opacity:1; }
     .upload-zone { border:2px dashed #cbd5e1; border-radius:12px; padding:40px; text-align:center; transition:.2s; cursor:pointer; }
-    .upload-zone:hover { border-color:#4f46e5; background:#f5f3ff; }
-    .upload-zone.dragover { border-color:#4f46e5; background:#f5f3ff; }
+    .upload-zone:hover, .upload-zone.dragover { border-color:#4f46e5; background:#f5f3ff; }
+
+    /* Bulk action bar */
+    .bulk-bar {
+        background: #1e1b4b; color:#fff; border-radius:12px;
+        padding:12px 20px; margin-bottom:12px;
+        display:none; align-items:center; gap:12px;
+        animation: slideDown .2s ease;
+    }
+    .bulk-bar.show { display:flex; }
+    @keyframes slideDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+    .bulk-count { font-weight:700; color:#a5b4fc; }
+
+    /* Clipboard bar */
+    .clipboard-bar {
+        background:#065f46; color:#fff; border-radius:12px;
+        padding:10px 20px; margin-bottom:12px;
+        display:none; align-items:center; gap:12px; font-size:.9rem;
+    }
+    .clipboard-bar.show { display:flex; }
+
+    /* Checkbox style */
+    .fm-check { width:16px; height:16px; cursor:pointer; accent-color:#4f46e5; }
+    tr.selected-row { background:#f5f3ff !important; }
+    .btn-xs { font-size:.75rem; padding:3px 8px; }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Toolbar -->
+<!-- Breadcrumb + Toolbar -->
 <div class="fm-toolbar d-flex flex-wrap align-items-center gap-2">
-    <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="me-auto">
         <ol class="breadcrumb mb-0">
             <li class="breadcrumb-item">
-                <a href="{{ url_for('filemanager.index') }}">
-                    <i class="fas fa-home"></i> Home
-                </a>
+                <a href="{{ url_for('filemanager.index') }}"><i class="fas fa-home"></i> Home</a>
             </li>
             {% for crumb in breadcrumbs %}
             <li class="breadcrumb-item {% if loop.last %}active{% endif %}">
                 {% if not loop.last %}
                     <a href="{{ url_for('filemanager.index', subpath=crumb.path) }}">{{ crumb.name }}</a>
-                {% else %}
-                    {{ crumb.name }}
-                {% endif %}
+                {% else %}{{ crumb.name }}{% endif %}
             </li>
             {% endfor %}
         </ol>
     </nav>
-
-    <!-- Action buttons -->
     <button class="btn btn-sm btn-primary" onclick="document.getElementById('upload-input').click()">
         <i class="fas fa-upload me-1"></i>Upload
     </button>
@@ -58,7 +74,7 @@
     </a>
 </div>
 
-<!-- Upload form (hidden) -->
+<!-- Upload form hidden -->
 <form id="upload-form" method="POST"
     action="{{ url_for('filemanager.upload', subpath=subpath) }}"
     enctype="multipart/form-data" class="d-none">
@@ -66,31 +82,74 @@
         onchange="document.getElementById('upload-form').submit()">
 </form>
 
-<!-- File table -->
+<!-- Clipboard bar -->
+<div class="clipboard-bar" id="clipboard-bar">
+    <i class="fas fa-clipboard me-1"></i>
+    <span id="clipboard-info">0 item di clipboard</span>
+    <span class="ms-2 badge bg-warning text-dark" id="clipboard-op">CUT</span>
+    <button class="btn btn-sm btn-success ms-auto" onclick="pasteItems()">
+        <i class="fas fa-paste me-1"></i>Paste Di Sini
+    </button>
+    <button class="btn btn-sm btn-outline-light btn-sm" onclick="clearClipboard()">
+        <i class="fas fa-times"></i>
+    </button>
+</div>
+
+<!-- Bulk action bar -->
+<div class="bulk-bar" id="bulk-bar">
+    <span class="bulk-count" id="bulk-count">0 dipilih</span>
+    <div class="vr opacity-25"></div>
+    <button class="btn btn-sm btn-warning" onclick="bulkCut()">
+        <i class="fas fa-scissors me-1"></i>Cut
+    </button>
+    <button class="btn btn-sm btn-info" onclick="bulkCopy()">
+        <i class="fas fa-copy me-1"></i>Copy
+    </button>
+    <button class="btn btn-sm btn-danger ms-auto" onclick="bulkDelete()">
+        <i class="fas fa-trash me-1"></i>Hapus Semua
+    </button>
+    <button class="btn btn-sm btn-outline-light" onclick="clearSelection()">
+        <i class="fas fa-times me-1"></i>Batal
+    </button>
+</div>
+
+<!-- File Table -->
 <div class="card">
     <div class="card-body p-0">
         {% if items %}
         <table class="table fm-table mb-0">
             <thead>
                 <tr>
-                    <th style="width:40px"></th>
+                    <th style="width:40px">
+                        <input type="checkbox" class="fm-check" id="check-all" onchange="toggleAll(this)">
+                    </th>
+                    <th style="width:36px"></th>
                     <th>Nama</th>
                     <th>Ukuran</th>
                     <th>Diubah</th>
                     <th style="width:160px">Aksi</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="file-tbody">
                 {% if subpath %}
-                <tr onclick="window.location='{{ url_for('filemanager.index', subpath=subpath.rsplit('/', 1)[0] if '/' in subpath else '') }}'">
+                <tr>
+                    <td></td>
                     <td><i class="fas fa-folder text-warning"></i></td>
-                    <td class="fm-name">..</td>
-                    <td></td><td></td><td></td>
+                    <td colspan="4">
+                        <a class="fm-name text-decoration-none"
+                            href="{{ url_for('filemanager.index', subpath=subpath.rsplit('/', 1)[0] if '/' in subpath else '') }}">
+                            ..
+                        </a>
+                    </td>
                 </tr>
                 {% endif %}
 
                 {% for item in items %}
-                <tr>
+                <tr class="file-row" data-path="{{ item.rel_path }}" data-name="{{ item.name }}">
+                    <td>
+                        <input type="checkbox" class="fm-check item-check"
+                            value="{{ item.rel_path }}" onchange="updateBulkBar()">
+                    </td>
                     <td><i class="{{ item.icon }}"></i></td>
                     <td>
                         {% if item.is_dir %}
@@ -119,6 +178,10 @@
                                 <i class="fas fa-download fa-xs"></i>
                             </a>
                             {% endif %}
+                            <button class="btn btn-xs btn-outline-secondary py-0 px-2" title="Cut"
+                                onclick="singleCut('{{ item.rel_path }}', '{{ item.name }}')">
+                                <i class="fas fa-scissors fa-xs"></i>
+                            </button>
                             <button class="btn btn-xs btn-outline-warning py-0 px-2" title="Rename"
                                 onclick="showRename('{{ item.rel_path }}', '{{ item.name }}')">
                                 <i class="fas fa-i-cursor fa-xs"></i>
@@ -137,7 +200,6 @@
             </tbody>
         </table>
         {% else %}
-        <!-- Drop zone kalau folder kosong -->
         <div class="upload-zone m-4" id="drop-zone"
             onclick="document.getElementById('upload-input').click()">
             <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
@@ -147,9 +209,22 @@
         {% endif %}
     </div>
     <div class="card-footer text-muted small py-2 px-3">
-        {{ items|length }} item di <code>{{ home_dir }}{% if subpath %}/{{ subpath }}{% endif %}</code>
+        {{ items|length }} item •
+        <code>{{ home_dir }}{% if subpath %}/{{ subpath }}{% endif %}</code>
     </div>
 </div>
+
+<!-- Hidden forms untuk bulk action -->
+<form id="bulk-delete-form" method="POST" action="{{ url_for('filemanager.bulk_delete') }}" class="d-none">
+    <input type="hidden" name="subpath" value="{{ subpath }}">
+    <input type="hidden" name="targets" id="bulk-targets">
+</form>
+
+<form id="bulk-move-form" method="POST" action="{{ url_for('filemanager.bulk_move') }}" class="d-none">
+    <input type="hidden" name="dest_subpath" value="{{ subpath }}">
+    <input type="hidden" name="targets" id="move-targets">
+    <input type="hidden" name="operation" id="move-operation">
+</form>
 
 <!-- Modal Buat Folder -->
 <div class="modal fade" id="mkdirModal" tabindex="-1">
@@ -208,8 +283,7 @@
             <form method="POST" action="{{ url_for('filemanager.rename') }}" id="rename-form">
                 <input type="hidden" name="target" id="rename-target">
                 <div class="modal-body">
-                    <input type="text" name="new_name" id="rename-input" class="form-control"
-                        placeholder="Nama baru" required>
+                    <input type="text" name="new_name" id="rename-input" class="form-control" required>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
@@ -223,6 +297,92 @@
 
 {% block extra_js %}
 <script>
+// ===== CLIPBOARD =====
+let clipboard = { items: [], operation: '' };
+
+function getChecked() {
+    return [...document.querySelectorAll('.item-check:checked')].map(c => c.value);
+}
+
+function toggleAll(cb) {
+    document.querySelectorAll('.item-check').forEach(c => {
+        c.checked = cb.checked;
+        c.closest('tr').classList.toggle('selected-row', cb.checked);
+    });
+    updateBulkBar();
+}
+
+function updateBulkBar() {
+    const checked = getChecked();
+    const bar = document.getElementById('bulk-bar');
+    document.getElementById('bulk-count').textContent = checked.length + ' dipilih';
+    if (checked.length > 0) bar.classList.add('show');
+    else bar.classList.remove('show');
+    // Update row highlight
+    document.querySelectorAll('.item-check').forEach(c => {
+        c.closest('tr').classList.toggle('selected-row', c.checked);
+    });
+}
+
+function clearSelection() {
+    document.querySelectorAll('.item-check').forEach(c => c.checked = false);
+    document.getElementById('check-all').checked = false;
+    document.getElementById('bulk-bar').classList.remove('show');
+    document.querySelectorAll('.file-row').forEach(r => r.classList.remove('selected-row'));
+}
+
+function bulkCut() {
+    const items = getChecked();
+    if (!items.length) return;
+    clipboard = { items, operation: 'cut' };
+    showClipboardBar();
+    clearSelection();
+}
+
+function bulkCopy() {
+    const items = getChecked();
+    if (!items.length) return;
+    clipboard = { items, operation: 'copy' };
+    showClipboardBar();
+    clearSelection();
+}
+
+function singleCut(path, name) {
+    clipboard = { items: [path], operation: 'cut' };
+    showClipboardBar();
+}
+
+function showClipboardBar() {
+    const bar = document.getElementById('clipboard-bar');
+    document.getElementById('clipboard-info').textContent = clipboard.items.length + ' item';
+    document.getElementById('clipboard-op').textContent = clipboard.operation.toUpperCase();
+    document.getElementById('clipboard-op').className = 'ms-2 badge ' +
+        (clipboard.operation === 'cut' ? 'bg-warning text-dark' : 'bg-info text-dark');
+    bar.classList.add('show');
+}
+
+function clearClipboard() {
+    clipboard = { items: [], operation: '' };
+    document.getElementById('clipboard-bar').classList.remove('show');
+}
+
+function pasteItems() {
+    if (!clipboard.items.length) return;
+    document.getElementById('move-targets').value = JSON.stringify(clipboard.items);
+    document.getElementById('move-operation').value = clipboard.operation;
+    document.getElementById('bulk-move-form').submit();
+    clearClipboard();
+}
+
+function bulkDelete() {
+    const items = getChecked();
+    if (!items.length) return;
+    if (!confirm(`Hapus ${items.length} item? Tindakan ini tidak bisa dibatalkan!`)) return;
+    document.getElementById('bulk-targets').value = JSON.stringify(items);
+    document.getElementById('bulk-delete-form').submit();
+}
+
+// Rename
 function showRename(path, name) {
     document.getElementById('rename-target').value = path;
     document.getElementById('rename-input').value = name;
@@ -232,18 +392,26 @@ function showRename(path, name) {
 // Drag & drop upload
 const dropZone = document.getElementById('drop-zone');
 if (dropZone) {
-    dropZone.addEventListener('dragover', e => {
-        e.preventDefault();
-        dropZone.classList.add('dragover');
-    });
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
     dropZone.addEventListener('drop', e => {
         e.preventDefault();
         dropZone.classList.remove('dragover');
-        const input = document.getElementById('upload-input');
-        input.files = e.dataTransfer.files;
+        document.getElementById('upload-input').files = e.dataTransfer.files;
         document.getElementById('upload-form').submit();
     });
 }
+
+// Click row to select
+document.querySelectorAll('.file-row').forEach(row => {
+    row.addEventListener('click', e => {
+        if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' ||
+            e.target.tagName === 'INPUT' || e.target.closest('button') ||
+            e.target.closest('a') || e.target.closest('form')) return;
+        const cb = row.querySelector('.item-check');
+        cb.checked = !cb.checked;
+        updateBulkBar();
+    });
+});
 </script>
 {% endblock %}
