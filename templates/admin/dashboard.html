@@ -111,7 +111,7 @@
                                 </button>
 
                                 <!-- Update Domain -->
-                                <button class="btn btn-sm btn-info" onclick="showDomain({{ user.id }}, '{{ user.domain if user.domain and user.domain != \"-\" else \"\" }}')"
+                                <button class="btn btn-sm btn-info" onclick="showDomain({{ user.id }}, '{{ user.domain if user.domain and user.domain != '-' else '' }}')"
                                     title="Set Domain">
                                     <i class="fas fa-globe"></i>
                                 </button>
