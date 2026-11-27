@@ -68,10 +68,8 @@
 </div>
 
 <!-- Quick Actions -->
-<div class="card">
-    <div class="card-header py-3">
-        <i class="fas fa-bolt me-2"></i>Akses Cepat
-    </div>
+<div class="card mb-4">
+    <div class="card-header py-3"><i class="fas fa-bolt me-2"></i>Akses Cepat</div>
     <div class="card-body">
         <div class="row g-3">
             <div class="col-md-4">
@@ -80,7 +78,7 @@
                         onmouseover="this.style.background='#312e81'" onmouseout="this.style.background='#1e1b4b'">
                         <i class="fas fa-terminal fa-2x text-white mb-2"></i>
                         <div class="text-white fw-semibold">Terminal</div>
-                        <div class="text-indigo-300 small" style="color:#a5b4fc">Akses shell Anda</div>
+                        <div class="small" style="color:#a5b4fc">git clone, composer, npm</div>
                     </div>
                 </a>
             </div>
@@ -95,20 +93,62 @@
                 </a>
             </div>
             <div class="col-md-4">
-                <div class="p-4 rounded-3 text-center bg-light">
-                    <i class="fas fa-book fa-2x text-success mb-2"></i>
-                    <div class="fw-semibold">Panduan</div>
-                    <div class="text-muted small">git clone, php artisan, dll</div>
+                <a href="{{ url_for('dashboard.guide') }}" class="text-decoration-none">
+                    <div class="p-4 rounded-3 text-center bg-light" style="cursor:pointer;transition:.2s"
+                        onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f8fafc'">
+                        <i class="fas fa-book fa-2x text-success mb-2"></i>
+                        <div class="fw-semibold">Panduan</div>
+                        <div class="text-muted small">git clone, php artisan, dll</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Info Penting -->
+<div class="card border-warning mb-4">
+    <div class="card-body py-3">
+        <h6 class="text-warning mb-3"><i class="fas fa-triangle-exclamation me-2"></i>Informasi Penting</h6>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="p-3 rounded-3 bg-light">
+                    <div class="fw-semibold text-success mb-2"><i class="fas fa-check me-1"></i>Yang bisa Anda lakukan:</div>
+                    <ul class="mb-0 small text-muted">
+                        <li>Clone project dari GitHub/GitLab</li>
+                        <li>Upload & kelola file via File Manager</li>
+                        <li>Edit file <code>.env</code> project Anda</li>
+                        <li>Jalankan <code>composer install</code></li>
+                        <li>Jalankan <code>npm install / npm run build</code></li>
+                        <li>Jalankan <code>php artisan migrate</code></li>
+                        <li>Jalankan <code>python3</code> / <code>pip3</code></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 rounded-3 bg-light">
+                    <div class="fw-semibold text-danger mb-2"><i class="fas fa-times me-1"></i>Dikelola oleh Admin:</div>
+                    <ul class="mb-0 small text-muted">
+                        <li>Setup domain & SSL</li>
+                        <li>Pembuatan database MySQL</li>
+                        <li>Konfigurasi web server (Nginx)</li>
+                        <li>Install software / package baru</li>
+                        <li>Akses folder user lain</li>
+                        <li>Perintah <code>sudo</code> / <code>su</code></li>
+                    </ul>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Cheatsheet Commands -->
-<div class="card mt-4">
-    <div class="card-header py-3">
-        <i class="fas fa-code me-2"></i>Command Cheatsheet
+<!-- Cheatsheet -->
+<div class="card">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-code me-2"></i>Command Cheatsheet</span>
+        <a href="{{ url_for('dashboard.guide') }}" class="btn btn-sm btn-outline-primary">
+            Panduan Lengkap <i class="fas fa-arrow-right ms-1"></i>
+        </a>
     </div>
     <div class="card-body">
         <div class="row g-3">
@@ -116,28 +156,23 @@
                 <h6 class="text-muted">Git</h6>
                 <pre class="bg-dark text-white p-3 rounded small">git clone https://github.com/user/repo.git
 git pull origin main
-git status
-git add . && git commit -m "msg"</pre>
+git status</pre>
             </div>
             <div class="col-md-6">
                 <h6 class="text-muted">PHP / Laravel</h6>
-                <pre class="bg-dark text-white p-3 rounded small">php artisan migrate
-php artisan serve
-composer install
-composer update</pre>
+                <pre class="bg-dark text-white p-3 rounded small">composer install
+php artisan key:generate
+php artisan migrate</pre>
             </div>
             <div class="col-md-6">
                 <h6 class="text-muted">Node.js / NPM</h6>
                 <pre class="bg-dark text-white p-3 rounded small">npm install
-npm run build
-npm run dev
-node app.js</pre>
+npm run build</pre>
             </div>
             <div class="col-md-6">
-                <h6 class="text-muted">Python / Spark</h6>
-                <pre class="bg-dark text-white p-3 rounded small">python3 app.py
-pip3 install -r requirements.txt
-spark-submit job.py</pre>
+                <h6 class="text-muted">Python</h6>
+                <pre class="bg-dark text-white p-3 rounded small">pip3 install -r requirements.txt
+python3 app.py</pre>
             </div>
         </div>
     </div>

@@ -76,6 +76,9 @@
                 <a href="{{ url_for('filemanager.index') }}" class="nav-link {% if 'filemanager' in request.endpoint %}active{% endif %}">
                     <i class="fas fa-folder"></i> File Manager
                 </a>
+                <a href="{{ url_for('dashboard.guide') }}" class="nav-link {% if request.endpoint == 'dashboard.guide' %}active{% endif %}">
+                    <i class="fas fa-book"></i> Panduan
+                </a>
             {% endif %}
         </nav>
         <div style="position:absolute;bottom:20px;width:100%;padding:0 20px;">

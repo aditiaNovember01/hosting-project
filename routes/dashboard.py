@@ -31,8 +31,6 @@ def index():
     disk_used = get_disk_usage(home_dir)
     disk_quota = current_user.disk_quota_mb
     disk_percent = min(int((disk_used / disk_quota) * 100), 100) if disk_quota > 0 else 0
-
-    # Cek apakah home dir ada
     dir_exists = os.path.isdir(home_dir)
 
     return render_template(
@@ -44,3 +42,11 @@ def index():
         dir_exists=dir_exists,
         home_dir=home_dir
     )
+
+
+@dashboard_bp.route('/guide')
+@login_required
+def guide():
+    if getattr(current_user, 'is_admin', False):
+        return redirect(url_for('admin.dashboard'))
+    return render_template('guide.html')

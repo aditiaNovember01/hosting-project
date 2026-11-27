@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+{% block title %}Panduan - ShareHosting{% endblock %}
+{% block page_title %}<i class="fas fa-book me-2"></i>Panduan Penggunaan{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Sidebar navigasi panduan -->
+    <div class="col-md-3">
+        <div class="card sticky-top" style="top:80px">
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush rounded-3">
+                    <a href="#mulai" class="list-group-item list-group-item-action py-2 px-3 small">
+                        <i class="fas fa-rocket me-2 text-primary"></i>Mulai Dari Sini
+                    </a>
+                    <a href="#git" class="list-group-item list-group-item-action py-2 px-3 small">
+                        <i class="fab fa-git-alt me-2 text-danger"></i>Git & GitHub
+                    </a>
+                    <a href="#laravel" class="list-group-item list-group-item-action py-2 px-3 small">
+                        <i class="fab fa-php me-2 text-purple"></i>Laravel / PHP
+                    </a>
+                    <a href="#nodejs" class="list-group-item list-group-item-action py-2 px-3 small">
+                        <i class="fab fa-node-js me-2 text-success"></i>Node.js / NPM
+                    </a>
+                    <a href="#python" class="list-group-item list-group-item-action py-2 px-3 small">
+                        <i class="fab fa-python me-2 text-warning"></i>Python
+                    </a>
+                    <a href="#env" class="list-group-item list-group-item-action py-2 px-3 small">
+                        <i class="fas fa-lock me-2 text-danger"></i>File .env
+                    </a>
+                    <a href="#filemanager" class="list-group-item list-group-item-action py-2 px-3 small">
+                        <i class="fas fa-folder me-2 text-warning"></i>File Manager
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Konten panduan -->
+    <div class="col-md-9">
+
+        <!-- Mulai Dari Sini -->
+        <div class="card mb-4" id="mulai">
+            <div class="card-header py-3">
+                <i class="fas fa-rocket me-2 text-primary"></i>Mulai Dari Sini
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Sebagai user hosting, Anda hanya perlu fokus pada <strong>code project Anda</strong>.
+                    Urusan domain, database, dan web server sudah diatur oleh Admin.
+                </div>
+                <h6 class="fw-semibold">Alur kerja umum:</h6>
+                <ol class="text-muted">
+                    <li>Clone project dari GitHub ke folder hosting Anda via Terminal</li>
+                    <li>Buat file <code>.env</code> berdasarkan <code>.env.example</code></li>
+                    <li>Isi konfigurasi database yang diberikan Admin</li>
+                    <li>Jalankan <code>composer install</code> atau <code>npm install</code></li>
+                    <li>Jalankan migration jika perlu</li>
+                    <li>Project langsung bisa diakses via domain yang diberikan Admin</li>
+                </ol>
+                <div class="alert alert-warning mt-3 mb-0">
+                    <i class="fas fa-triangle-exclamation me-2"></i>
+                    Hubungi Admin untuk: setup domain, buat database baru, atau install software tambahan.
+                </div>
+            </div>
+        </div>
+
+        <!-- Git -->
+        <div class="card mb-4" id="git">
+            <div class="card-header py-3">
+                <i class="fab fa-git-alt me-2 text-danger"></i>Git & GitHub
+            </div>
+            <div class="card-body">
+                <h6>Clone project baru:</h6>
+                <pre class="bg-dark text-white p-3 rounded">git clone https://github.com/username/nama-repo.git</pre>
+
+                <h6 class="mt-3">Clone ke folder tertentu:</h6>
+                <pre class="bg-dark text-white p-3 rounded">git clone https://github.com/username/nama-repo.git nama-folder</pre>
+
+                <h6 class="mt-3">Update project (pull):</h6>
+                <pre class="bg-dark text-white p-3 rounded">cd nama-repo
+git pull origin main</pre>
+
+                <h6 class="mt-3">Cek status perubahan:</h6>
+                <pre class="bg-dark text-white p-3 rounded">git status
+git log --oneline -5</pre>
+
+                <div class="alert alert-info mt-3 mb-0 small">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    Untuk repo private, gunakan Personal Access Token GitHub sebagai password saat clone.
+                </div>
+            </div>
+        </div>
+
+        <!-- Laravel -->
+        <div class="card mb-4" id="laravel">
+            <div class="card-header py-3">
+                <i class="fab fa-php me-2" style="color:#7c3aed"></i>Laravel / PHP
+            </div>
+            <div class="card-body">
+                <h6>Setup project Laravel baru:</h6>
+                <pre class="bg-dark text-white p-3 rounded"># 1. Clone project
+git clone https://github.com/user/laravel-app.git
+cd laravel-app
+
+# 2. Install dependencies
+composer install
+
+# 3. Buat file .env
+cp .env.example .env
+
+# 4. Generate app key
+php artisan key:generate
+
+# 5. Edit .env (isi DB_* dari Admin)
+nano .env
+
+# 6. Jalankan migration
+php artisan migrate
+
+# 7. Jalankan seeder (opsional)
+php artisan db:seed</pre>
+
+                <h6 class="mt-3">Command artisan yang sering dipakai:</h6>
+                <pre class="bg-dark text-white p-3 rounded">php artisan migrate          # Jalankan migration
+php artisan migrate:fresh    # Reset & jalankan ulang migration
+php artisan db:seed          # Jalankan seeder
+php artisan cache:clear      # Bersihkan cache
+php artisan config:clear     # Bersihkan config cache
+php artisan storage:link     # Buat symlink storage
+php artisan make:model Nama  # Buat model baru
+php artisan route:list       # Lihat semua route</pre>
+
+                <div class="alert alert-warning mt-3 mb-0 small">
+                    <i class="fas fa-triangle-exclamation me-2"></i>
+                    Jangan jalankan <code>php artisan serve</code> — web server sudah diatur Admin via Nginx.
+                </div>
+            </div>
+        </div>
+
+        <!-- Node.js -->
+        <div class="card mb-4" id="nodejs">
+            <div class="card-header py-3">
+                <i class="fab fa-node-js me-2 text-success"></i>Node.js / NPM
+            </div>
+            <div class="card-body">
+                <h6>Setup project Node.js:</h6>
+                <pre class="bg-dark text-white p-3 rounded"># Install dependencies
+npm install
+
+# Build untuk production
+npm run build
+
+# Atau jika pakai yarn
+yarn install
+yarn build</pre>
+
+                <h6 class="mt-3">Untuk project Next.js / React:</h6>
+                <pre class="bg-dark text-white p-3 rounded">npm install
+npm run build
+# File hasil build ada di folder 'out' atau '.next'</pre>
+
+                <div class="alert alert-warning mt-3 mb-0 small">
+                    <i class="fas fa-triangle-exclamation me-2"></i>
+                    Jangan jalankan <code>npm run dev</code> atau <code>node server.js</code> secara langsung.
+                    Hubungi Admin untuk setup Node.js sebagai service.
+                </div>
+            </div>
+        </div>
+
+        <!-- Python -->
+        <div class="card mb-4" id="python">
+            <div class="card-header py-3">
+                <i class="fab fa-python me-2 text-warning"></i>Python
+            </div>
+            <div class="card-body">
+                <h6>Setup project Python/Flask/Django:</h6>
+                <pre class="bg-dark text-white p-3 rounded"># Install dependencies
+pip3 install -r requirements.txt
+
+# Buat .env
+cp .env.example .env
+nano .env
+
+# Untuk Django - jalankan migration
+python3 manage.py migrate
+python3 manage.py collectstatic</pre>
+
+                <div class="alert alert-warning mt-3 mb-0 small">
+                    <i class="fas fa-triangle-exclamation me-2"></i>
+                    Jangan jalankan <code>python3 app.py</code> atau <code>flask run</code> langsung.
+                    Hubungi Admin untuk setup Python app sebagai service.
+                </div>
+            </div>
+        </div>
+
+        <!-- File .env -->
+        <div class="card mb-4" id="env">
+            <div class="card-header py-3">
+                <i class="fas fa-lock me-2 text-danger"></i>Konfigurasi File .env
+            </div>
+            <div class="card-body">
+                <p class="text-muted">File <code>.env</code> berisi konfigurasi sensitif project Anda. Admin akan memberikan data database yang perlu diisi.</p>
+
+                <h6>Contoh .env Laravel:</h6>
+                <pre class="bg-dark text-white p-3 rounded">APP_NAME="Nama Aplikasi"
+APP_ENV=production
+APP_KEY=         # diisi setelah php artisan key:generate
+APP_DEBUG=false
+APP_URL=https://domain-anda.com
+
+DB_CONNECTION=mysql
+DB_HOST=localhost
+DB_PORT=3306
+DB_DATABASE=nama_database    # dari Admin
+DB_USERNAME=nama_user_db     # dari Admin
+DB_PASSWORD=password_db      # dari Admin</pre>
+
+                <h6 class="mt-3">Edit .env via terminal:</h6>
+                <pre class="bg-dark text-white p-3 rounded">nano .env</pre>
+
+                <div class="alert alert-danger mt-3 mb-0 small">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    Jangan pernah commit file <code>.env</code> ke GitHub! Pastikan <code>.env</code> ada di <code>.gitignore</code>.
+                </div>
+            </div>
+        </div>
+
+        <!-- File Manager -->
+        <div class="card mb-4" id="filemanager">
+            <div class="card-header py-3">
+                <i class="fas fa-folder me-2 text-warning"></i>File Manager
+            </div>
+            <div class="card-body">
+                <p class="text-muted">File Manager memungkinkan Anda mengelola file tanpa terminal.</p>
+                <ul class="text-muted">
+                    <li><strong>Upload</strong> — Klik tombol Upload atau drag & drop file</li>
+                    <li><strong>Edit</strong> — Klik ikon pensil untuk edit file teks/kode</li>
+                    <li><strong>Download</strong> — Klik ikon download untuk unduh file</li>
+                    <li><strong>Rename</strong> — Klik ikon rename untuk ganti nama</li>
+                    <li><strong>Delete</strong> — Klik ikon trash untuk hapus</li>
+                    <li><strong>Folder baru</strong> — Klik tombol "Folder Baru" di toolbar</li>
+                </ul>
+                <a href="{{ url_for('filemanager.index') }}" class="btn btn-primary btn-sm mt-2">
+                    <i class="fas fa-folder-open me-1"></i>Buka File Manager
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
