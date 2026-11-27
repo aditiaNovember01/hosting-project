@@ -55,6 +55,7 @@ def create_user():
         password = request.form.get('password', '')
         quota_mb = int(request.form.get('quota_mb', 1024))
         domain = request.form.get('domain', '').strip() or None
+        custom_home = request.form.get('home_dir', '').strip()
 
         # Validasi
         if not username or not email or not password:
@@ -78,36 +79,11 @@ def create_user():
         from flask import current_app
         hosting_root = current_app.config['HOSTING_ROOT']
         linux_user = f'host_{username}'
-        home_dir = os.path.join(hosting_root, username)
+        # Pakai custom home_dir jika diisi, kalau tidak pakai default
+        home_dir = custom_home if custom_home else os.path.join(hosting_root, username)
 
         try:
-            # Buat Linux user
-            result = subprocess.run(
-                ['useradd', '-m', '-d', home_dir, '-s', '/bin/rbash', '-g', 'www-data', linux_user],
-                capture_output=True, text=True
-            )
-            if result.returncode != 0 and 'already exists' not in result.stderr:
-                flash(f'Gagal membuat Linux user: {result.stderr}', 'danger')
-                return render_template('admin/create_user.html')
-
-            # Set password Linux user
-            proc = subprocess.Popen(
-                ['chpasswd'],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-            proc.communicate(input=f'{linux_user}:{password}'.encode())
-
-            # Buat home dir dan set permission
-            os.makedirs(home_dir, exist_ok=True)
-            subprocess.run(['chown', '-R', f'{linux_user}:www-data', home_dir])
-            subprocess.run(['chmod', '750', home_dir])
-
-            # Setup restricted bash
-            setup_rbash(linux_user, home_dir)
-
-            # Simpan ke database
+            # Simpan ke database saja — folder & linux user dibuat manual oleh admin
             user_id = User.create(
                 username=username,
                 email=email,
@@ -118,7 +94,7 @@ def create_user():
                 domain=domain
             )
 
-            flash(f'User "{username}" berhasil dibuat! ID: {user_id}', 'success')
+            flash(f'User "{username}" berhasil dibuat! Folder: {home_dir}', 'success')
             return redirect(url_for('admin.dashboard'))
 
         except Exception as e:
