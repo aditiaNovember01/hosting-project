@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Tambah User - Admin{% endblock %}
+{% block page_title %}<i class="fas fa-user-plus me-2"></i>Tambah User Baru{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header py-3">
+                <i class="fas fa-user-plus me-2"></i>Form Tambah User
+            </div>
+            <div class="card-body p-4">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST" action="{{ url_for('admin.create_user') }}">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Username <span class="text-danger">*</span></label>
+                        <input type="text" name="username" class="form-control"
+                            placeholder="contoh: budi123" required
+                            pattern="[a-zA-Z0-9]{3,20}"
+                            title="Hanya huruf dan angka, 3-20 karakter">
+                        <div class="form-text">Hanya huruf dan angka, 3-20 karakter. Akan jadi nama folder: <code>/www/wwwroot/username</code></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
+                        <input type="email" name="email" class="form-control"
+                            placeholder="user@example.com" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Password <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="password" name="password" id="pwd" class="form-control"
+                                placeholder="Min. 8 karakter" required minlength="8">
+                            <button type="button" class="btn btn-outline-secondary" onclick="togglePwd()">
+                                <i class="fas fa-eye" id="eye"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="generatePwd()">
+                                <i class="fas fa-dice"></i>
+                            </button>
+                        </div>
+                        <div id="pwd-display" class="form-text text-success fw-semibold"></div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Quota Disk (MB)</label>
+                        <input type="number" name="quota_mb" class="form-control"
+                            value="1024" min="100" max="51200">
+                        <div class="form-text">Default: 1024 MB (1 GB). Max: 51200 MB (50 GB)</div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-plus me-2"></i>Buat User
+                        </button>
+                        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Kembali
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Info -->
+        <div class="card mt-3 border-info">
+            <div class="card-body py-3">
+                <h6 class="text-info"><i class="fas fa-info-circle me-2"></i>Yang akan dibuat otomatis:</h6>
+                <ul class="mb-0 small text-muted">
+                    <li>Linux user: <code>host_[username]</code> dengan restricted bash</li>
+                    <li>Home directory: <code>/www/wwwroot/[username]</code></li>
+                    <li>Symlink command yang diizinkan di <code>~/bin/</code></li>
+                    <li>Environment terisolasi (tidak bisa akses folder user lain)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePwd() {
+    const pwd = document.getElementById('pwd');
+    const eye = document.getElementById('eye');
+    pwd.type = pwd.type === 'password' ? 'text' : 'password';
+    eye.className = pwd.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+}
+function generatePwd() {
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$';
+    let pwd = '';
+    for (let i = 0; i < 12; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
+    document.getElementById('pwd').type = 'text';
+    document.getElementById('pwd').value = pwd;
+    document.getElementById('eye').className = 'fas fa-eye-slash';
+    document.getElementById('pwd-display').textContent = 'Password: ' + pwd + ' (catat sebelum submit!)';
+}
+</script>
+{% endblock %}

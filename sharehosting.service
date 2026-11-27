@@ -1,0 +1,15 @@
+[Unit]
+Description=ShareHosting Panel
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/www/sharehosting
+Environment="PATH=/www/sharehosting/venv/bin"
+ExecStart=/www/sharehosting/venv/bin/python app.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

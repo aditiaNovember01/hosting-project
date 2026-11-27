@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard - ShareHosting{% endblock %}
+{% block page_title %}<i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card" style="background:linear-gradient(135deg,#4f46e5,#7c3aed)">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="opacity-75 small mb-1">Total User</div>
+                    <div class="fs-2 fw-bold">{{ total_users }}</div>
+                </div>
+                <i class="fas fa-users fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card" style="background:linear-gradient(135deg,#059669,#10b981)">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="opacity-75 small mb-1">User Aktif</div>
+                    <div class="fs-2 fw-bold">{{ active_users }}</div>
+                </div>
+                <i class="fas fa-user-check fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card" style="background:linear-gradient(135deg,#dc2626,#f97316)">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="opacity-75 small mb-1">Sesi Hari Ini</div>
+                    <div class="fs-2 fw-bold">{{ sessions_today }}</div>
+                </div>
+                <i class="fas fa-terminal fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="card">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-users me-2"></i>Daftar User</span>
+        <a href="{{ url_for('admin.create_user') }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus me-1"></i>Tambah User
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>User</th>
+                        <th>Linux User</th>
+                        <th>Home Dir</th>
+                        <th>Quota</th>
+                        <th>Status</th>
+                        <th>Login Terakhir</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">{{ user.username }}</div>
+                            <small class="text-muted">{{ user.email }}</small>
+                        </td>
+                        <td><code>{{ user.linux_user }}</code></td>
+                        <td><small class="text-muted">{{ user.home_dir }}</small></td>
+                        <td>{{ user.disk_quota_mb }} MB</td>
+                        <td>
+                            <span class="badge px-2 py-1 {% if user.is_active_flag %}badge-active{% else %}badge-inactive{% endif %}">
+                                {% if user.is_active_flag %}Aktif{% else %}Nonaktif{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <small>{{ user.last_login.strftime('%d/%m/%Y %H:%M') if user.last_login else '-' }}</small>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <!-- Toggle Status -->
+                                <form method="POST" action="{{ url_for('admin.toggle_user', user_id=user.id) }}" class="d-inline">
+                                    <button class="btn btn-sm {% if user.is_active_flag %}btn-warning{% else %}btn-success{% endif %}"
+                                        title="{% if user.is_active_flag %}Nonaktifkan{% else %}Aktifkan{% endif %}">
+                                        <i class="fas {% if user.is_active_flag %}fa-ban{% else %}fa-check{% endif %}"></i>
+                                    </button>
+                                </form>
+
+                                <!-- Reset Password -->
+                                <button class="btn btn-sm btn-info" onclick="showResetPwd({{ user.id }}, '{{ user.username }}')"
+                                    title="Reset Password">
+                                    <i class="fas fa-key"></i>
+                                </button>
+
+                                <!-- Update Quota -->
+                                <button class="btn btn-sm btn-secondary" onclick="showQuota({{ user.id }}, {{ user.disk_quota_mb }})"
+                                    title="Update Quota">
+                                    <i class="fas fa-hdd"></i>
+                                </button>
+
+                                <!-- Hapus -->
+                                <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}" class="d-inline"
+                                    onsubmit="return confirm('Hapus user {{ user.username }}? Semua file akan ikut terhapus!')">
+                                    <button class="btn btn-sm btn-danger" title="Hapus">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            <i class="fas fa-users fa-2x mb-2 d-block opacity-25"></i>
+                            Belum ada user. <a href="{{ url_for('admin.create_user') }}">Tambah sekarang</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Reset Password -->
+<div class="modal fade" id="resetPwdModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title"><i class="fas fa-key me-2"></i>Reset Password</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" id="resetPwdForm">
+                <div class="modal-body">
+                    <p class="text-muted small">Reset password untuk: <strong id="reset-username"></strong></p>
+                    <input type="password" name="new_password" class="form-control"
+                        placeholder="Password baru" required minlength="8">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Reset</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Update Quota -->
+<div class="modal fade" id="quotaModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title"><i class="fas fa-hdd me-2"></i>Update Quota</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" id="quotaForm">
+                <div class="modal-body">
+                    <label class="form-label small text-muted">Quota (MB)</label>
+                    <input type="number" name="quota_mb" id="quota-input" class="form-control"
+                        min="100" max="51200" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showResetPwd(userId, username) {
+    document.getElementById('reset-username').textContent = username;
+    document.getElementById('resetPwdForm').action = '/admin/users/' + userId + '/reset-password';
+    new bootstrap.Modal(document.getElementById('resetPwdModal')).show();
+}
+function showQuota(userId, currentQuota) {
+    document.getElementById('quota-input').value = currentQuota;
+    document.getElementById('quotaForm').action = '/admin/users/' + userId + '/quota';
+    new bootstrap.Modal(document.getElementById('quotaModal')).show();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ filename }}{% endblock %}
+{% block page_title %}<i class="fas fa-pen me-2"></i>Edit - {{ filename }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+<style>
+    .CodeMirror { height: calc(100vh - 240px); font-size: 14px; font-family: 'Cascadia Code', 'Fira Code', monospace; }
+    .file-toolbar { background:#fff; border-radius:12px; padding:12px 20px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="file-toolbar d-flex align-items-center gap-2">
+    <a href="{{ url_for('filemanager.index', subpath=parent_path) }}" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Kembali
+    </a>
+    <span class="text-muted small"><code>{{ subpath }}</code></span>
+    <div class="ms-auto d-flex gap-2">
+        <button onclick="saveFile()" class="btn btn-sm btn-primary">
+            <i class="fas fa-save me-1"></i>Simpan <kbd class="ms-1" style="font-size:.7rem">Ctrl+S</kbd>
+        </button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <form method="POST" id="edit-form">
+            <textarea id="editor" name="content">{{ content }}</textarea>
+            <button type="submit" class="d-none" id="submit-btn"></button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/php/php.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/shell/shell.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<script>
+    // Deteksi mode dari ekstensi file
+    const filename = '{{ filename }}';
+    const ext = filename.split('.').pop().toLowerCase();
+    const modeMap = {
+        'php': 'php', 'py': 'python', 'js': 'javascript',
+        'html': 'htmlmixed', 'htm': 'htmlmixed',
+        'css': 'css', 'sh': 'shell', 'bash': 'shell',
+        'json': {name: 'javascript', json: true}
+    };
+
+    const editor = CodeMirror.fromTextArea(document.getElementById('editor'), {
+        lineNumbers: true,
+        theme: 'dracula',
+        mode: modeMap[ext] || 'null',
+        matchBrackets: true,
+        autoCloseBrackets: true,
+        indentUnit: 4,
+        tabSize: 4,
+        lineWrapping: false,
+        extraKeys: {
+            'Ctrl-S': () => saveFile(),
+            'Cmd-S': () => saveFile()
+        }
+    });
+
+    function saveFile() {
+        editor.save();
+        document.getElementById('edit-form').submit();
+    }
+</script>
+{% endblock %}

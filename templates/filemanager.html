@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% block title %}File Manager - {{ current_user.username }}{% endblock %}
+{% block page_title %}<i class="fas fa-folder-open me-2"></i>File Manager{% endblock %}
+
+{% block extra_css %}
+<style>
+    .fm-toolbar { background:#fff; border-radius:12px; padding:14px 20px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+    .fm-table th { font-size:.8rem; text-transform:uppercase; color:#94a3b8; font-weight:600; border-bottom:2px solid #f1f5f9; }
+    .fm-table tr:hover { background:#f8fafc; cursor:pointer; }
+    .fm-table td { vertical-align:middle; padding:10px 12px; }
+    .fm-name { font-weight:500; color:#1e293b; }
+    .fm-name:hover { color:#4f46e5; }
+    .breadcrumb-item a { color:#4f46e5; text-decoration:none; }
+    .breadcrumb-item.active { color:#64748b; }
+    .action-btn { opacity:0; transition:.15s; }
+    tr:hover .action-btn { opacity:1; }
+    .upload-zone { border:2px dashed #cbd5e1; border-radius:12px; padding:40px; text-align:center; transition:.2s; cursor:pointer; }
+    .upload-zone:hover { border-color:#4f46e5; background:#f5f3ff; }
+    .upload-zone.dragover { border-color:#4f46e5; background:#f5f3ff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Toolbar -->
+<div class="fm-toolbar d-flex flex-wrap align-items-center gap-2">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="me-auto">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('filemanager.index') }}">
+                    <i class="fas fa-home"></i> Home
+                </a>
+            </li>
+            {% for crumb in breadcrumbs %}
+            <li class="breadcrumb-item {% if loop.last %}active{% endif %}">
+                {% if not loop.last %}
+                    <a href="{{ url_for('filemanager.index', subpath=crumb.path) }}">{{ crumb.name }}</a>
+                {% else %}
+                    {{ crumb.name }}
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ol>
+    </nav>
+
+    <!-- Action buttons -->
+    <button class="btn btn-sm btn-primary" onclick="document.getElementById('upload-input').click()">
+        <i class="fas fa-upload me-1"></i>Upload
+    </button>
+    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#mkdirModal">
+        <i class="fas fa-folder-plus me-1"></i>Folder Baru
+    </button>
+    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#newfileModal">
+        <i class="fas fa-file-plus me-1"></i>File Baru
+    </button>
+    <a href="{{ url_for('terminal.terminal') }}" class="btn btn-sm btn-outline-dark">
+        <i class="fas fa-terminal me-1"></i>Terminal
+    </a>
+</div>
+
+<!-- Upload form (hidden) -->
+<form id="upload-form" method="POST"
+    action="{{ url_for('filemanager.upload', subpath=subpath) }}"
+    enctype="multipart/form-data" class="d-none">
+    <input type="file" id="upload-input" name="files" multiple
+        onchange="document.getElementById('upload-form').submit()">
+</form>
+
+<!-- File table -->
+<div class="card">
+    <div class="card-body p-0">
+        {% if items %}
+        <table class="table fm-table mb-0">
+            <thead>
+                <tr>
+                    <th style="width:40px"></th>
+                    <th>Nama</th>
+                    <th>Ukuran</th>
+                    <th>Diubah</th>
+                    <th style="width:160px">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if subpath %}
+                <tr onclick="window.location='{{ url_for('filemanager.index', subpath=subpath.rsplit('/', 1)[0] if '/' in subpath else '') }}'">
+                    <td><i class="fas fa-folder text-warning"></i></td>
+                    <td class="fm-name">..</td>
+                    <td></td><td></td><td></td>
+                </tr>
+                {% endif %}
+
+                {% for item in items %}
+                <tr>
+                    <td><i class="{{ item.icon }}"></i></td>
+                    <td>
+                        {% if item.is_dir %}
+                            <a class="fm-name text-decoration-none"
+                                href="{{ url_for('filemanager.index', subpath=item.rel_path) }}">
+                                {{ item.name }}
+                            </a>
+                        {% else %}
+                            <a class="fm-name text-decoration-none"
+                                href="{{ url_for('filemanager.view_file', subpath=item.rel_path) }}">
+                                {{ item.name }}
+                            </a>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted small">{{ item.size_str if not item.is_dir else '—' }}</td>
+                    <td class="text-muted small">{{ item.modified }}</td>
+                    <td>
+                        <div class="d-flex gap-1 action-btn">
+                            {% if not item.is_dir %}
+                            <a href="{{ url_for('filemanager.edit_file', subpath=item.rel_path) }}"
+                                class="btn btn-xs btn-outline-primary py-0 px-2" title="Edit">
+                                <i class="fas fa-pen fa-xs"></i>
+                            </a>
+                            <a href="{{ url_for('filemanager.download', subpath=item.rel_path) }}"
+                                class="btn btn-xs btn-outline-success py-0 px-2" title="Download">
+                                <i class="fas fa-download fa-xs"></i>
+                            </a>
+                            {% endif %}
+                            <button class="btn btn-xs btn-outline-warning py-0 px-2" title="Rename"
+                                onclick="showRename('{{ item.rel_path }}', '{{ item.name }}')">
+                                <i class="fas fa-i-cursor fa-xs"></i>
+                            </button>
+                            <form method="POST" action="{{ url_for('filemanager.delete') }}" class="d-inline"
+                                onsubmit="return confirm('Hapus {{ item.name }}?')">
+                                <input type="hidden" name="target" value="{{ item.rel_path }}">
+                                <button class="btn btn-xs btn-outline-danger py-0 px-2" title="Hapus">
+                                    <i class="fas fa-trash fa-xs"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <!-- Drop zone kalau folder kosong -->
+        <div class="upload-zone m-4" id="drop-zone"
+            onclick="document.getElementById('upload-input').click()">
+            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+            <div class="fw-semibold text-muted">Folder kosong</div>
+            <div class="text-muted small mt-1">Klik atau drag & drop file untuk upload</div>
+        </div>
+        {% endif %}
+    </div>
+    <div class="card-footer text-muted small py-2 px-3">
+        {{ items|length }} item di <code>{{ home_dir }}{% if subpath %}/{{ subpath }}{% endif %}</code>
+    </div>
+</div>
+
+<!-- Modal Buat Folder -->
+<div class="modal fade" id="mkdirModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title"><i class="fas fa-folder-plus me-2"></i>Buat Folder</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('filemanager.mkdir') }}">
+                <input type="hidden" name="subpath" value="{{ subpath }}">
+                <div class="modal-body">
+                    <input type="text" name="folder_name" class="form-control"
+                        placeholder="Nama folder" required autofocus>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Buat</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal File Baru -->
+<div class="modal fade" id="newfileModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title"><i class="fas fa-file-plus me-2"></i>File Baru</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('filemanager.new_file') }}">
+                <input type="hidden" name="subpath" value="{{ subpath }}">
+                <div class="modal-body">
+                    <input type="text" name="filename" class="form-control"
+                        placeholder="contoh: index.php" required autofocus>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Buat & Edit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Rename -->
+<div class="modal fade" id="renameModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title"><i class="fas fa-i-cursor me-2"></i>Rename</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('filemanager.rename') }}" id="rename-form">
+                <input type="hidden" name="target" id="rename-target">
+                <div class="modal-body">
+                    <input type="text" name="new_name" id="rename-input" class="form-control"
+                        placeholder="Nama baru" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Rename</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showRename(path, name) {
+    document.getElementById('rename-target').value = path;
+    document.getElementById('rename-input').value = name;
+    new bootstrap.Modal(document.getElementById('renameModal')).show();
+}
+
+// Drag & drop upload
+const dropZone = document.getElementById('drop-zone');
+if (dropZone) {
+    dropZone.addEventListener('dragover', e => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        const input = document.getElementById('upload-input');
+        input.files = e.dataTransfer.files;
+        document.getElementById('upload-form').submit();
+    });
+}
+</script>
+{% endblock %}

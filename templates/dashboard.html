@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - {{ user.username }}{% endblock %}
+{% block page_title %}<i class="fas fa-home me-2"></i>Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Info Akun -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center py-4">
+                <div style="width:72px;height:72px;background:#ede9fe;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:2rem;color:#4f46e5;margin-bottom:16px;">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h5 class="fw-bold mb-1">{{ user.username }}</h5>
+                <p class="text-muted small mb-3">{{ user.email }}</p>
+                <span class="badge px-3 py-2 {% if user.is_active_flag %}badge-active{% else %}badge-inactive{% endif %}">
+                    {% if user.is_active_flag %}<i class="fas fa-check-circle me-1"></i>Aktif
+                    {% else %}<i class="fas fa-times-circle me-1"></i>Nonaktif{% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Disk Usage -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="text-muted mb-3"><i class="fas fa-hdd me-2"></i>Penggunaan Disk</h6>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="fw-semibold">{{ disk_used }} MB</span>
+                    <span class="text-muted">/ {{ disk_quota }} MB</span>
+                </div>
+                <div class="progress" style="height:10px;border-radius:99px;">
+                    <div class="progress-bar {% if disk_percent > 80 %}bg-danger{% elif disk_percent > 60 %}bg-warning{% else %}bg-success{% endif %}"
+                        style="width:{{ disk_percent }}%;border-radius:99px;"></div>
+                </div>
+                <small class="text-muted mt-2 d-block">{{ disk_percent }}% terpakai</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Server -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="text-muted mb-3"><i class="fas fa-info-circle me-2"></i>Info Hosting</h6>
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted small">Linux User</td>
+                        <td><code>{{ user.linux_user }}</code></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">Home Dir</td>
+                        <td><code class="small">{{ user.home_dir }}</code></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">Bergabung</td>
+                        <td class="small">{{ user.created_at.strftime('%d %b %Y') if user.created_at else '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">Login Terakhir</td>
+                        <td class="small">{{ user.last_login.strftime('%d %b %Y %H:%M') if user.last_login else '-' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card">
+    <div class="card-header py-3">
+        <i class="fas fa-bolt me-2"></i>Akses Cepat
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <a href="{{ url_for('terminal.terminal') }}" class="text-decoration-none">
+                    <div class="p-4 rounded-3 text-center" style="background:#1e1b4b;cursor:pointer;transition:.2s"
+                        onmouseover="this.style.background='#312e81'" onmouseout="this.style.background='#1e1b4b'">
+                        <i class="fas fa-terminal fa-2x text-white mb-2"></i>
+                        <div class="text-white fw-semibold">Terminal</div>
+                        <div class="text-indigo-300 small" style="color:#a5b4fc">Akses shell Anda</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{{ url_for('filemanager.index') }}" class="text-decoration-none">
+                    <div class="p-4 rounded-3 text-center bg-light" style="cursor:pointer;transition:.2s"
+                        onmouseover="this.style.background='#e0e7ff'" onmouseout="this.style.background='#f8fafc'">
+                        <i class="fas fa-folder fa-2x text-primary mb-2"></i>
+                        <div class="fw-semibold">File Manager</div>
+                        <div class="text-muted small">{{ home_dir }}</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4 rounded-3 text-center bg-light">
+                    <i class="fas fa-book fa-2x text-success mb-2"></i>
+                    <div class="fw-semibold">Panduan</div>
+                    <div class="text-muted small">git clone, php artisan, dll</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cheatsheet Commands -->
+<div class="card mt-4">
+    <div class="card-header py-3">
+        <i class="fas fa-code me-2"></i>Command Cheatsheet
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <h6 class="text-muted">Git</h6>
+                <pre class="bg-dark text-white p-3 rounded small">git clone https://github.com/user/repo.git
+git pull origin main
+git status
+git add . && git commit -m "msg"</pre>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-muted">PHP / Laravel</h6>
+                <pre class="bg-dark text-white p-3 rounded small">php artisan migrate
+php artisan serve
+composer install
+composer update</pre>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-muted">Node.js / NPM</h6>
+                <pre class="bg-dark text-white p-3 rounded small">npm install
+npm run build
+npm run dev
+node app.js</pre>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-muted">Python / Spark</h6>
+                <pre class="bg-dark text-white p-3 rounded small">python3 app.py
+pip3 install -r requirements.txt
+spark-submit job.py</pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Log Sesi - Admin{% endblock %}
+{% block page_title %}<i class="fas fa-history me-2"></i>Log Sesi Terminal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header py-3">
+        <i class="fas fa-history me-2"></i>100 Sesi Terakhir
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>User</th>
+                        <th>IP Address</th>
+                        <th>Mulai</th>
+                        <th>Selesai</th>
+                        <th>Durasi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sessions %}
+                    <tr>
+                        <td>{{ s.id }}</td>
+                        <td><strong>{{ s.username }}</strong></td>
+                        <td><code>{{ s.ip_address or '-' }}</code></td>
+                        <td>{{ s.started_at.strftime('%d/%m/%Y %H:%M:%S') if s.started_at else '-' }}</td>
+                        <td>{{ s.ended_at.strftime('%d/%m/%Y %H:%M:%S') if s.ended_at else '<span class="badge badge-active">Aktif</span>' | safe }}</td>
+                        <td>
+                            {% if s.started_at and s.ended_at %}
+                                {% set dur = (s.ended_at - s.started_at).seconds %}
+                                {{ dur // 60 }}m {{ dur % 60 }}s
+                            {% else %}-{% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">Belum ada log sesi.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

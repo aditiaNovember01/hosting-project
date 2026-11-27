@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ filename }} - File Manager{% endblock %}
+{% block page_title %}<i class="fas fa-file me-2"></i>{{ filename }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<style>
+    pre code { font-size: .85rem; }
+    .file-toolbar { background:#fff; border-radius:12px; padding:12px 20px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="file-toolbar d-flex align-items-center gap-2">
+    <a href="{{ url_for('filemanager.index', subpath=parent_path) }}" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Kembali
+    </a>
+    <a href="{{ url_for('filemanager.edit_file', subpath=subpath) }}" class="btn btn-sm btn-primary">
+        <i class="fas fa-pen me-1"></i>Edit
+    </a>
+    <a href="{{ url_for('filemanager.download', subpath=subpath) }}" class="btn btn-sm btn-outline-success">
+        <i class="fas fa-download me-1"></i>Download
+    </a>
+    <span class="ms-auto text-muted small"><code>{{ subpath }}</code></span>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <pre class="m-0" style="border-radius:12px;overflow:auto;max-height:75vh"><code class="{{ ext[1:] if ext else 'plaintext' }}">{{ content | e }}</code></pre>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+{% endblock %}
