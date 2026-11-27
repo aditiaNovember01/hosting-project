@@ -12,7 +12,7 @@ def index():
         if getattr(current_user, 'is_admin', False):
             return redirect(url_for('admin.dashboard'))
         return redirect(url_for('dashboard.index'))
-    return redirect(url_for('auth.login'))
+    return render_template('landing.html')
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
