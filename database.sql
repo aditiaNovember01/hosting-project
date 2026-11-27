@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     linux_user VARCHAR(50) UNIQUE NOT NULL,
     home_dir VARCHAR(255) NOT NULL,
+    domain VARCHAR(255) NULL,
     disk_quota_mb INT DEFAULT 1024,
     is_active TINYINT(1) DEFAULT 1,
     is_admin TINYINT(1) DEFAULT 0,

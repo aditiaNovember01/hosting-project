@@ -55,7 +55,7 @@
                     <tr>
                         <th>User</th>
                         <th>Linux User</th>
-                        <th>Home Dir</th>
+                        <th>Domain</th>
                         <th>Quota</th>
                         <th>Status</th>
                         <th>Login Terakhir</th>
@@ -70,7 +70,15 @@
                             <small class="text-muted">{{ user.email }}</small>
                         </td>
                         <td><code>{{ user.linux_user }}</code></td>
-                        <td><small class="text-muted">{{ user.home_dir }}</small></td>
+                        <td>
+                            {% if user.domain and user.domain != '-' %}
+                                <a href="http://{{ user.domain }}" target="_blank" class="text-decoration-none small">
+                                    <i class="fas fa-globe me-1 text-success"></i>{{ user.domain }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted small"><i class="fas fa-minus"></i> Belum diset</span>
+                            {% endif %}
+                        </td>
                         <td>{{ user.disk_quota_mb }} MB</td>
                         <td>
                             <span class="badge px-2 py-1 {% if user.is_active_flag %}badge-active{% else %}badge-inactive{% endif %}">
@@ -100,6 +108,12 @@
                                 <button class="btn btn-sm btn-secondary" onclick="showQuota({{ user.id }}, {{ user.disk_quota_mb }})"
                                     title="Update Quota">
                                     <i class="fas fa-hdd"></i>
+                                </button>
+
+                                <!-- Update Domain -->
+                                <button class="btn btn-sm btn-info" onclick="showDomain({{ user.id }}, '{{ user.domain if user.domain and user.domain != \"-\" else \"\" }}')"
+                                    title="Set Domain">
+                                    <i class="fas fa-globe"></i>
                                 </button>
 
                                 <!-- Hapus -->
@@ -171,6 +185,34 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Update Domain -->
+<div class="modal fade" id="domainModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title"><i class="fas fa-globe me-2"></i>Set Domain User</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" id="domainForm">
+                <div class="modal-body">
+                    <div class="alert alert-info small mb-3">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Setelah set domain di sini, arahkan domain tersebut ke folder user di <strong>aaPanel → Website → Conf → Domain Manager</strong>.
+                    </div>
+                    <label class="form-label small text-muted">Domain</label>
+                    <input type="text" name="domain" id="domain-input" class="form-control"
+                        placeholder="contoh: user.loffy.my.id">
+                    <div class="form-text">Kosongkan untuk hapus domain.</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -184,6 +226,11 @@ function showQuota(userId, currentQuota) {
     document.getElementById('quota-input').value = currentQuota;
     document.getElementById('quotaForm').action = '/admin/users/' + userId + '/quota';
     new bootstrap.Modal(document.getElementById('quotaModal')).show();
+}
+function showDomain(userId, currentDomain) {
+    document.getElementById('domain-input').value = currentDomain;
+    document.getElementById('domainForm').action = '/admin/users/' + userId + '/domain';
+    new bootstrap.Modal(document.getElementById('domainModal')).show();
 }
 </script>
 {% endblock %}

@@ -50,6 +50,18 @@
                         <td><code>{{ user.linux_user }}</code></td>
                     </tr>
                     <tr>
+                        <td class="text-muted small">Domain</td>
+                        <td>
+                            {% if user.domain and user.domain != '-' %}
+                                <a href="http://{{ user.domain }}" target="_blank" class="small">
+                                    <i class="fas fa-globe me-1 text-success"></i>{{ user.domain }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted small">Belum diset</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
                         <td class="text-muted small">Home Dir</td>
                         <td><code class="small">{{ user.home_dir }}</code></td>
                     </tr>

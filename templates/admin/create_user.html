@@ -20,6 +20,16 @@
 
                 <form method="POST" action="{{ url_for('admin.create_user') }}">
                     <div class="mb-3">
+                        <label class="form-label fw-semibold">Domain <span class="text-muted small">(opsional)</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-globe text-muted"></i></span>
+                            <input type="text" name="domain" class="form-control"
+                                placeholder="contoh: user.loffy.my.id atau domainuser.com">
+                        </div>
+                        <div class="form-text">Isi domain yang akan diarahkan ke folder user ini. Bisa diubah nanti.</div>
+                    </div>
+
+                    <div class="mb-3">
                         <label class="form-label fw-semibold">Username <span class="text-danger">*</span></label>
                         <input type="text" name="username" class="form-control"
                             placeholder="contoh: budi123" required

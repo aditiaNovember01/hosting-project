@@ -54,6 +54,7 @@ def create_user():
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
         quota_mb = int(request.form.get('quota_mb', 1024))
+        domain = request.form.get('domain', '').strip() or None
 
         # Validasi
         if not username or not email or not password:
@@ -113,7 +114,8 @@ def create_user():
                 password=password,
                 linux_user=linux_user,
                 home_dir=home_dir,
-                disk_quota_mb=quota_mb
+                disk_quota_mb=quota_mb,
+                domain=domain
             )
 
             flash(f'User "{username}" berhasil dibuat! ID: {user_id}', 'success')
@@ -210,6 +212,16 @@ def update_quota(user_id):
         flash('Quota berhasil diperbarui.', 'success')
     except ValueError:
         flash('Quota tidak valid.', 'danger')
+    return redirect(url_for('admin.dashboard'))
+
+
+@admin_bp.route('/users/<int:user_id>/domain', methods=['POST'])
+@login_required
+@admin_required
+def update_domain(user_id):
+    domain = request.form.get('domain', '').strip()
+    User.update_domain(user_id, domain or None)
+    flash('Domain berhasil diperbarui.', 'success')
     return redirect(url_for('admin.dashboard'))
 
 

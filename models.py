@@ -10,6 +10,7 @@ class User(UserMixin):
         self.password_hash = data['password_hash']
         self.linux_user = data['linux_user']
         self.home_dir = data['home_dir']
+        self.domain = data.get('domain') or '-'
         self.disk_quota_mb = data['disk_quota_mb']
         self.is_active_flag = data['is_active']
         self.is_admin = data['is_admin']
@@ -51,18 +52,25 @@ class User(UserMixin):
         return [User(r) for r in rows]
 
     @staticmethod
-    def create(username, email, password, linux_user, home_dir, disk_quota_mb=1024):
+    def create(username, email, password, linux_user, home_dir, disk_quota_mb=1024, domain=None):
         pw_hash = bcrypt.generate_password_hash(password).decode('utf-8')
         cur = db_conn.connection.cursor()
         cur.execute(
-            """INSERT INTO users (username, email, password_hash, linux_user, home_dir, disk_quota_mb)
-               VALUES (%s, %s, %s, %s, %s, %s)""",
-            (username, email, pw_hash, linux_user, home_dir, disk_quota_mb)
+            """INSERT INTO users (username, email, password_hash, linux_user, home_dir, domain, disk_quota_mb)
+               VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+            (username, email, pw_hash, linux_user, home_dir, domain, disk_quota_mb)
         )
         db_conn.connection.commit()
         new_id = cur.lastrowid
         cur.close()
         return new_id
+
+    @staticmethod
+    def update_domain(user_id, domain):
+        cur = db_conn.connection.cursor()
+        cur.execute("UPDATE users SET domain = %s WHERE id = %s", (domain, user_id))
+        db_conn.connection.commit()
+        cur.close()
 
     @staticmethod
     def update_last_login(user_id):
