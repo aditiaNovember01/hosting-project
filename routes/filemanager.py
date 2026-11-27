@@ -471,3 +471,52 @@ def bulk_move():
         flash(f'{errors} item gagal.', 'warning')
 
     return redirect(url_for('filemanager.index', subpath=dest_subpath))
+
+
+@filemanager_bp.route('/files/permission', methods=['POST'])
+@login_required
+def set_permission():
+    home_dir = current_user.home_dir
+    target_rel = request.form.get('target', '')
+    permission = request.form.get('permission', '').strip()
+    recursive = request.form.get('recursive', '') == '1'
+    parent_path = os.path.dirname(target_rel)
+
+    # Validasi permission
+    if not permission or not permission.isdigit() or len(permission) not in [3, 4]:
+        flash('Permission tidak valid. Gunakan format octal (contoh: 755).', 'danger')
+        return redirect(url_for('filemanager.index', subpath=parent_path))
+
+    # Validasi nilai octal
+    try:
+        perm_int = int(permission, 8)
+    except ValueError:
+        flash('Permission tidak valid.', 'danger')
+        return redirect(url_for('filemanager.index', subpath=parent_path))
+
+    target = get_safe_path(home_dir, target_rel)
+    if target is None or not os.path.exists(target):
+        flash('File tidak ditemukan.', 'danger')
+        return redirect(url_for('filemanager.index', subpath=parent_path))
+
+    try:
+        if recursive and os.path.isdir(target):
+            # Terapkan ke semua file di dalam folder
+            for root, dirs, files in os.walk(target):
+                os.chmod(root, perm_int)
+                for f in files:
+                    try:
+                        os.chmod(os.path.join(root, f), perm_int)
+                    except Exception:
+                        pass
+        else:
+            os.chmod(target, perm_int)
+
+        name = os.path.basename(target)
+        flash(f'Permission "{name}" berhasil diubah ke {permission}.', 'success')
+    except PermissionError:
+        flash('Tidak ada izin untuk mengubah permission file ini.', 'danger')
+    except Exception as e:
+        flash(f'Gagal mengubah permission: {str(e)}', 'danger')
+
+    return redirect(url_for('filemanager.index', subpath=parent_path))

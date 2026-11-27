@@ -186,6 +186,10 @@
                                 onclick="showRename('{{ item.rel_path }}', '{{ item.name }}')">
                                 <i class="fas fa-i-cursor fa-xs"></i>
                             </button>
+                            <button class="btn btn-xs btn-outline-info py-0 px-2" title="Permission"
+                                onclick="showPermission('{{ item.rel_path }}', '{{ item.name }}')">
+                                <i class="fas fa-lock fa-xs"></i>
+                            </button>
                             <form method="POST" action="{{ url_for('filemanager.delete') }}" class="d-inline"
                                 onsubmit="return confirm('Hapus {{ item.name }}?')">
                                 <input type="hidden" name="target" value="{{ item.rel_path }}">
@@ -288,6 +292,101 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary btn-sm">Rename</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Permission -->
+<div class="modal fade" id="permissionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title"><i class="fas fa-lock me-2"></i>Set Permission (chmod)</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('filemanager.set_permission') }}" id="permission-form">
+                <input type="hidden" name="target" id="perm-target">
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">File: <code id="perm-name"></code></p>
+
+                    <!-- Quick presets -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Quick Preset:</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setPermPreset('755')">
+                                755 <small class="text-muted">(folder)</small>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setPermPreset('644')">
+                                644 <small class="text-muted">(file)</small>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-warning" onclick="setPermPreset('777')">
+                                777 <small class="text-muted">(storage)</small>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-info" onclick="setPermPreset('775')">
+                                775 <small class="text-muted">(group write)</small>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="setPermPreset('600')">
+                                600 <small class="text-muted">(.env)</small>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Manual input -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Permission (octal):</label>
+                        <input type="text" name="permission" id="perm-input" class="form-control"
+                            placeholder="contoh: 755" maxlength="4" pattern="[0-7]{3,4}" required>
+                    </div>
+
+                    <!-- Checkbox visual -->
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered text-center small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th></th>
+                                    <th colspan="3">Owner</th>
+                                    <th colspan="3">Group</th>
+                                    <th colspan="3">Other</th>
+                                </tr>
+                                <tr>
+                                    <th></th>
+                                    <th>R</th><th>W</th><th>X</th>
+                                    <th>R</th><th>W</th><th>X</th>
+                                    <th>R</th><th>W</th><th>X</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="text-muted">4/2/1</td>
+                                    <td><input type="checkbox" class="perm-cb" data-pos="0" data-val="4" onchange="updatePermInput()"></td>
+                                    <td><input type="checkbox" class="perm-cb" data-pos="0" data-val="2" onchange="updatePermInput()"></td>
+                                    <td><input type="checkbox" class="perm-cb" data-pos="0" data-val="1" onchange="updatePermInput()"></td>
+                                    <td><input type="checkbox" class="perm-cb" data-pos="1" data-val="4" onchange="updatePermInput()"></td>
+                                    <td><input type="checkbox" class="perm-cb" data-pos="1" data-val="2" onchange="updatePermInput()"></td>
+                                    <td><input type="checkbox" class="perm-cb" data-pos="1" data-val="1" onchange="updatePermInput()"></td>
+                                    <td><input type="checkbox" class="perm-cb" data-pos="2" data-val="4" onchange="updatePermInput()"></td>
+                                    <td><input type="checkbox" class="perm-cb" data-pos="2" data-val="2" onchange="updatePermInput()"></td>
+                                    <td><input type="checkbox" class="perm-cb" data-pos="2" data-val="1" onchange="updatePermInput()"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Recursive option -->
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" name="recursive" id="perm-recursive" value="1">
+                        <label class="form-check-label small" for="perm-recursive">
+                            Terapkan ke semua file di dalam folder (recursive)
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-save me-1"></i>Simpan Permission
+                    </button>
                 </div>
             </form>
         </div>
@@ -413,6 +512,36 @@ function showRename(path, name) {
     document.getElementById('rename-target').value = path;
     document.getElementById('rename-input').value = name;
     new bootstrap.Modal(document.getElementById('renameModal')).show();
+}
+
+// Permission
+function showPermission(path, name) {
+    document.getElementById('perm-target').value = path;
+    document.getElementById('perm-name').textContent = name;
+    setPermPreset('755');
+    new bootstrap.Modal(document.getElementById('permissionModal')).show();
+}
+
+function setPermPreset(val) {
+    document.getElementById('perm-input').value = val;
+    updateCheckboxes(val);
+}
+
+function updateCheckboxes(val) {
+    const digits = val.padStart(3, '0').slice(-3).split('').map(Number);
+    document.querySelectorAll('.perm-cb').forEach(cb => {
+        const pos = parseInt(cb.dataset.pos);
+        const v = parseInt(cb.dataset.val);
+        cb.checked = (digits[pos] & v) !== 0;
+    });
+}
+
+function updatePermInput() {
+    const vals = [0, 0, 0];
+    document.querySelectorAll('.perm-cb').forEach(cb => {
+        if (cb.checked) vals[parseInt(cb.dataset.pos)] += parseInt(cb.dataset.val);
+    });
+    document.getElementById('perm-input').value = vals.join('');
 }
 
 // Drag & drop upload
