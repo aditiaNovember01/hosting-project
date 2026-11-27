@@ -83,7 +83,40 @@ def create_user():
         home_dir = custom_home if custom_home else os.path.join(hosting_root, username)
 
         try:
-            # Simpan ke database saja — folder & linux user dibuat manual oleh admin
+            # 1. Buat Linux user jika belum ada
+            check = subprocess.run(['id', linux_user], capture_output=True)
+            if check.returncode != 0:
+                subprocess.run(
+                    ['useradd', '-m', '-d', home_dir, '-s', '/bin/bash', linux_user],
+                    capture_output=True
+                )
+
+            # 2. Set password Linux user
+            proc = subprocess.Popen(
+                ['chpasswd'],
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            proc.communicate(input=f'{linux_user}:{password}'.encode())
+
+            # 3. Pastikan home_dir ada dan permission benar
+            os.makedirs(home_dir, exist_ok=True)
+            subprocess.run(['chown', '-R', f'{linux_user}:www-data', home_dir], capture_output=True)
+            subprocess.run(['chmod', '750', home_dir], capture_output=True)
+
+            # 4. Tambah sudoers untuk terminal
+            sudoers_line = f'root ALL=({linux_user}) NOPASSWD: /bin/bash\n'
+            sudoers_file = '/etc/sudoers.d/sharehosting'
+            try:
+                with open(sudoers_file, 'r') as f:
+                    existing = f.read()
+            except FileNotFoundError:
+                existing = ''
+            if linux_user not in existing:
+                with open(sudoers_file, 'a') as f:
+                    f.write(sudoers_line)
+                subprocess.run(['chmod', '440', sudoers_file])
+
+            # 5. Simpan ke database
             user_id = User.create(
                 username=username,
                 email=email,
@@ -94,7 +127,7 @@ def create_user():
                 domain=domain
             )
 
-            flash(f'User "{username}" berhasil dibuat! Folder: {home_dir}', 'success')
+            flash(f'User "{username}" berhasil dibuat! Linux user: {linux_user}, Folder: {home_dir}', 'success')
             return redirect(url_for('admin.dashboard'))
 
         except Exception as e:
@@ -168,6 +201,19 @@ def delete_user(user_id):
     try:
         # Hapus Linux user
         subprocess.run(['userdel', '-r', user.linux_user], capture_output=True)
+
+        # Hapus dari sudoers
+        sudoers_file = '/etc/sudoers.d/sharehosting'
+        try:
+            with open(sudoers_file, 'r') as f:
+                lines = f.readlines()
+            with open(sudoers_file, 'w') as f:
+                for line in lines:
+                    if user.linux_user not in line:
+                        f.write(line)
+        except Exception:
+            pass
+
         # Hapus dari DB
         User.delete(user_id)
         flash(f'User "{user.username}" berhasil dihapus.', 'success')
