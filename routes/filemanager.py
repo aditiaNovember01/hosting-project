@@ -266,8 +266,13 @@ def mkdir():
         flash('Nama folder tidak boleh kosong.', 'danger')
         return redirect(url_for('filemanager.index', subpath=subpath))
 
-    folder_name = secure_filename(folder_name)
-    parent = get_safe_path(home_dir, subpath)
+    # Filter karakter berbahaya tanpa secure_filename
+    forbidden = ['/', '\\', '..', '\0']
+    for f in forbidden:
+        if f in folder_name:
+            flash('Nama folder tidak valid.', 'danger')
+            return redirect(url_for('filemanager.index', subpath=subpath))
+
     new_folder = get_safe_path(home_dir, os.path.join(subpath, folder_name))
 
     if new_folder is None:
@@ -326,7 +331,14 @@ def rename():
         flash('Nama baru tidak boleh kosong.', 'danger')
         return redirect(url_for('filemanager.index', subpath=parent_path))
 
-    new_name = secure_filename(new_name)
+    # Jangan pakai secure_filename agar .env, .htaccess dll tetap valid
+    # Hanya filter karakter berbahaya
+    forbidden = ['/', '\\', '..', '\0']
+    for f in forbidden:
+        if f in new_name:
+            flash('Nama file tidak valid.', 'danger')
+            return redirect(url_for('filemanager.index', subpath=parent_path))
+
     target = get_safe_path(home_dir, target_rel)
     new_path = get_safe_path(home_dir, os.path.join(parent_path, new_name))
 
@@ -354,7 +366,13 @@ def new_file():
         flash('Nama file tidak boleh kosong.', 'danger')
         return redirect(url_for('filemanager.index', subpath=subpath))
 
-    filename = secure_filename(filename)
+    # Filter karakter berbahaya tanpa secure_filename
+    forbidden = ['/', '\\', '..', '\0']
+    for f in forbidden:
+        if f in filename:
+            flash('Nama file tidak valid.', 'danger')
+            return redirect(url_for('filemanager.index', subpath=subpath))
+
     file_path = get_safe_path(home_dir, os.path.join(subpath, filename))
 
     if file_path is None:
