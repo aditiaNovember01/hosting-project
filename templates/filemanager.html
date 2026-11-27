@@ -300,6 +300,25 @@
 // ===== CLIPBOARD =====
 let clipboard = { items: [], operation: '' };
 
+// Load clipboard dari localStorage saat page load
+function loadClipboard() {
+    const saved = localStorage.getItem('fm_clipboard');
+    if (saved) {
+        try {
+            clipboard = JSON.parse(saved);
+            if (clipboard.items && clipboard.items.length > 0) {
+                showClipboardBar();
+            }
+        } catch(e) {
+            localStorage.removeItem('fm_clipboard');
+        }
+    }
+}
+
+function saveClipboard() {
+    localStorage.setItem('fm_clipboard', JSON.stringify(clipboard));
+}
+
 function getChecked() {
     return [...document.querySelectorAll('.item-check:checked')].map(c => c.value);
 }
@@ -318,7 +337,6 @@ function updateBulkBar() {
     document.getElementById('bulk-count').textContent = checked.length + ' dipilih';
     if (checked.length > 0) bar.classList.add('show');
     else bar.classList.remove('show');
-    // Update row highlight
     document.querySelectorAll('.item-check').forEach(c => {
         c.closest('tr').classList.toggle('selected-row', c.checked);
     });
@@ -335,6 +353,7 @@ function bulkCut() {
     const items = getChecked();
     if (!items.length) return;
     clipboard = { items, operation: 'cut' };
+    saveClipboard();
     showClipboardBar();
     clearSelection();
 }
@@ -343,16 +362,19 @@ function bulkCopy() {
     const items = getChecked();
     if (!items.length) return;
     clipboard = { items, operation: 'copy' };
+    saveClipboard();
     showClipboardBar();
     clearSelection();
 }
 
 function singleCut(path, name) {
     clipboard = { items: [path], operation: 'cut' };
+    saveClipboard();
     showClipboardBar();
 }
 
 function showClipboardBar() {
+    if (!clipboard.items || !clipboard.items.length) return;
     const bar = document.getElementById('clipboard-bar');
     document.getElementById('clipboard-info').textContent = clipboard.items.length + ' item';
     document.getElementById('clipboard-op').textContent = clipboard.operation.toUpperCase();
@@ -363,15 +385,19 @@ function showClipboardBar() {
 
 function clearClipboard() {
     clipboard = { items: [], operation: '' };
+    localStorage.removeItem('fm_clipboard');
     document.getElementById('clipboard-bar').classList.remove('show');
 }
 
 function pasteItems() {
-    if (!clipboard.items.length) return;
+    if (!clipboard.items || !clipboard.items.length) return;
     document.getElementById('move-targets').value = JSON.stringify(clipboard.items);
     document.getElementById('move-operation').value = clipboard.operation;
+    // Kalau cut, hapus clipboard setelah paste
+    if (clipboard.operation === 'cut') {
+        localStorage.removeItem('fm_clipboard');
+    }
     document.getElementById('bulk-move-form').submit();
-    clearClipboard();
 }
 
 function bulkDelete() {
@@ -413,5 +439,8 @@ document.querySelectorAll('.file-row').forEach(row => {
         updateBulkBar();
     });
 });
+
+// Load clipboard saat halaman dibuka
+loadClipboard();
 </script>
 {% endblock %}
